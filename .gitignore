@@ -31,14 +31,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Logs
-logs/
-*.log
-
-# Capturas y reportes (generados por el bot)
-capturas/
-reportes/
-
 # IDE
 .idea/
 .vscode/
