@@ -20,6 +20,7 @@ from src.base_datos.repositorio_resultados import Resultado
 from src.base_datos.conexion import inicializar_pool, cerrar_pool
 from src.scraping import BuscadorOfac
 from src.scraping.navegador import navegador_web
+from src.utilidades.captura_pantalla import CapturaPantalla
 from .servicio_validacion import ServicioValidacion
 from .servicio_exportacion import ServicioExportacion
 
@@ -141,6 +142,7 @@ class ServicioProcesamiento:
 
         with navegador_web() as navegador:
             buscador = BuscadorOfac(navegador)
+            captura = CapturaPantalla(navegador)
 
             if not buscador.navegar_a_ofac():
                 logger.error("No se pudo acceder al sitio OFAC")
@@ -149,6 +151,14 @@ class ServicioProcesamiento:
 
             for persona in personas:
                 try:
+                    # Verificar si ya existe resultado para esta persona
+                    if self.repo_resultados.existe_resultado_persona(persona.id_persona):
+                        logger.warning(
+                            f"Ya existe resultado para persona {persona.id_persona}. "
+                            f"Se insertará un nuevo registro (no hay constraint UNIQUE)."
+                        )
+
+                    # Realizar búsqueda en OFAC
                     resultado_busqueda = buscador.buscar_persona(
                         nombre=persona.nombre_persona,
                         direccion=persona.direccion,
@@ -156,15 +166,30 @@ class ServicioProcesamiento:
                     )
 
                     if resultado_busqueda.exito:
+                        # Capturar screenshot si hay resultados
                         if resultado_busqueda.cantidad_resultados > 0:
-                            self._capturar_screenshot(buscador, persona.id_persona)
+                            try:
+                                captura.capturar(id_persona=persona.id_persona)
+                                logger.info(
+                                    f"Screenshot capturado para persona {persona.id_persona}"
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error al capturar screenshot para persona {persona.id_persona}: {e}. "
+                                    f"Continuando con el guardado en BD."
+                                )
 
                         estado = ESTADO_OK
                         stats['ok'] += 1
                     else:
+                        logger.warning(
+                            f"Búsqueda OFAC falló para persona {persona.id_persona}: "
+                            f"{resultado_busqueda.mensaje_error}"
+                        )
                         estado = ESTADO_NOK
                         stats['nok'] += 1
 
+                    # Crear objeto Resultado
                     resultado = Resultado(
                         id_persona=persona.id_persona,
                         nombre_persona=persona.nombre_persona,
@@ -172,31 +197,55 @@ class ServicioProcesamiento:
                         cantidad_resultados=resultado_busqueda.cantidad_resultados,
                         estado_transaccion=estado
                     )
-                    self.repo_resultados.insertar(resultado)
+
+                    # Validar campos obligatorios antes de insertar
+                    if not self._validar_resultado(resultado):
+                        logger.error(
+                            f"Validación fallida para persona {persona.id_persona}. "
+                            f"No se insertará en BD."
+                        )
+                        stats['errores'] += 1
+                        continue
+
+                    # Insertar resultado en BD
+                    id_insertado = self.repo_resultados.insertar(resultado)
+                    logger.info(
+                        f"Resultado insertado con ID {id_insertado} para persona {persona.id_persona}: "
+                        f"{estado}, cantidad={resultado_busqueda.cantidad_resultados}"
+                    )
 
                 except Exception as e:
                     logger.error(
-                        f"Error procesando persona {persona.id_persona}: {e}"
+                        f"Error procesando persona {persona.id_persona}: {e}",
+                        exc_info=True
                     )
                     stats['errores'] += 1
 
         return stats
 
-    def _capturar_screenshot(self, buscador: BuscadorOfac, id_persona: int) -> None:
+    def _validar_resultado(self, resultado: Resultado) -> bool:
         """
-        Captura screenshot de los resultados.
+        Valida que un resultado tenga los campos obligatorios.
 
         Args:
-            buscador: Instancia del buscador OFAC
-            id_persona: ID de la persona
+            resultado: Objeto Resultado a validar
+
+        Returns:
+            True si es válido, False en caso contrario
         """
-        fecha = datetime.now().strftime(FORMATO_FECHA_CAPTURA)
-        nombre_archivo = FORMATO_NOMBRE_CAPTURA.format(
-            fecha=fecha,
-            id_persona=id_persona
-        )
-        ruta_completa = os.path.join(
-            self.config.directorio_capturas,
-            nombre_archivo
-        )
-        buscador.capturar_pantalla(ruta_completa)
+        # Validar idPersona
+        if not resultado.id_persona or resultado.id_persona <= 0:
+            logger.error(f"idPersona es obligatorio y debe ser > 0: {resultado.id_persona}")
+            return False
+
+        # Validar nombrePersona
+        if not resultado.nombre_persona or resultado.nombre_persona.strip() == "":
+            logger.error(f"nombrePersona es obligatorio y no puede estar vacío")
+            return False
+
+        # Validar estadoTransaccion
+        if not resultado.estado_transaccion or resultado.estado_transaccion.strip() == "":
+            logger.error(f"estadoTransaccion es obligatorio y no puede estar vacío")
+            return False
+
+        return True
