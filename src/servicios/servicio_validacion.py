@@ -96,11 +96,13 @@ class ServicioValidacion:
         """
         direccion_vacia = (
             persona.direccion is None or
-            str(persona.direccion).strip() == ''
+            str(persona.direccion).strip() == '' or
+            str(persona.direccion).strip() == 'None'
         )
         pais_vacio = (
             persona.pais is None or
-            str(persona.pais).strip() == ''
+            str(persona.pais).strip() == '' or
+            str(persona.pais).strip() == 'None'
         )
 
         return direccion_vacia or pais_vacio
