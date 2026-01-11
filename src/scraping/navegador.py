@@ -42,11 +42,14 @@ def crear_navegador(headless: Optional[bool] = None) -> webdriver.Chrome:
 
     if headless:
         opciones.add_argument("--headless")
+        opciones.add_argument("--window-size=1920,1080")
+    else:
+        # Abrir en pantalla completa cuando no es headless
+        opciones.add_argument("--start-maximized")
 
     opciones.add_argument("--no-sandbox")
     opciones.add_argument("--disable-dev-shm-usage")
     opciones.add_argument("--disable-gpu")
-    opciones.add_argument("--window-size=1920,1080")
     opciones.add_argument("--disable-extensions")
     opciones.add_argument("--disable-popup-blocking")
 
@@ -57,7 +60,14 @@ def crear_navegador(headless: Optional[bool] = None) -> webdriver.Chrome:
         _navegador = webdriver.Chrome(options=opciones)
         _navegador.implicitly_wait(config.selenium.tiempo_espera_implicito)
 
+        # Maximizar ventana si no es headless
+        if not headless:
+            _navegador.maximize_window()
+
         logger.info("Navegador Chrome iniciado correctamente")
+        logger.info(f"Modo headless: {headless}")
+        logger.info(f"Tamaño de ventana: {'Maximizada' if not headless else '1920x1080'}")
+
         return _navegador
 
     except Exception as e:
@@ -73,6 +83,26 @@ def obtener_navegador() -> Optional[webdriver.Chrome]:
         Instancia del navegador o None si no existe
     """
     return _navegador
+
+
+def establecer_zoom(zoom: int = 60) -> None:
+    """
+    Establece el nivel de zoom del navegador.
+
+    Args:
+        zoom: Porcentaje de zoom (por defecto 60% para capturas completas)
+    """
+    global _navegador
+
+    if _navegador is None:
+        logger.warning("No hay navegador activo para establecer zoom")
+        return
+
+    try:
+        _navegador.execute_script(f"document.body.style.zoom='{zoom}%'")
+        logger.info(f"Zoom establecido al {zoom}%")
+    except Exception as e:
+        logger.error(f"Error al establecer el zoom: {e}")
 
 
 def cerrar_navegador() -> None:

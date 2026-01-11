@@ -45,7 +45,7 @@ class BuscadorOfac:
 
     def navegar_a_ofac(self) -> bool:
         """
-        Navega a la página principal de OFAC.
+        Navega a la página principal de OFAC y establece zoom al 60%.
 
         Returns:
             True si la navegación fue exitosa
@@ -55,6 +55,14 @@ class BuscadorOfac:
             WebDriverWait(self.navegador, self.tiempo_espera).until(
                 EC.presence_of_element_located((By.TAG_NAME, "form"))
             )
+
+            # Establecer zoom al 60% para capturas completas
+            try:
+                self.navegador.execute_script("document.body.style.zoom='60%'")
+                logger.info("Zoom establecido al 60%")
+            except Exception as e:
+                logger.warning(f"No se pudo establecer el zoom: {e}")
+
             logger.info("Navegación a OFAC exitosa")
             return True
 

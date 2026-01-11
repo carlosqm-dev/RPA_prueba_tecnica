@@ -44,6 +44,7 @@ class CapturaPantalla:
     ) -> Optional[str]:
         """
         Captura la pantalla actual y la guarda con el formato requerido.
+        Asegura que el zoom esté al 60% antes de capturar.
 
         Args:
             id_persona: ID de la persona para nombrar el archivo
@@ -53,6 +54,13 @@ class CapturaPantalla:
             Ruta del archivo guardado o None si falla
         """
         try:
+            # Asegurar zoom al 60% antes de capturar
+            try:
+                self.navegador.execute_script("document.body.style.zoom='60%'")
+                logger.debug("Zoom establecido al 60% antes de capturar")
+            except Exception as e:
+                logger.warning(f"No se pudo establecer el zoom antes de capturar: {e}")
+
             fecha = datetime.now().strftime(FORMATO_FECHA_CAPTURA)
             nombre_base = FORMATO_NOMBRE_CAPTURA.format(
                 fecha=fecha,
