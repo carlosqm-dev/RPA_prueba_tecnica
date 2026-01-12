@@ -29,44 +29,36 @@ class ServicioExportacion:
     def exportar_incompletos(self) -> str:
         """
         Exporta los registros con información incompleta a Excel.
+        Incluye el campo dirección de la tabla MaestraDetallePersonas.
 
         Returns:
-            Ruta del archivo Excel generado
+            Ruta del archivo Excel generado o cadena vacía si no hay registros
         """
         try:
-            resultados = self.repo_resultados.obtener_por_estado(
-                ESTADO_INFORMACION_INCOMPLETA
-            )
+            # Obtener DataFrame con dirección incluida
+            df = self.repo_resultados.obtener_incompletos_con_direccion()
 
-            if not resultados:
+            if df.empty:
                 logger.info("No hay registros incompletos para exportar")
                 return ""
 
-            datos = [
-                {
-                    'ID Persona': r.id_persona,
-                    'Nombre': r.nombre_persona,
-                    'País': r.pais,
-                    'Cantidad Resultados': r.cantidad_resultados,
-                    'Estado': r.estado_transaccion
-                }
-                for r in resultados
-            ]
+            # Crear directorio de reportes si no existe
+            os.makedirs(self.config.directorio_reportes, exist_ok=True)
 
-            df = pd.DataFrame(datos)
-
-            fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Generar nombre del archivo con formato YYYYMMDD
+            fecha = datetime.now().strftime("%Y%m%d")
             nombre_archivo = FORMATO_NOMBRE_REPORTE.format(fecha=fecha)
             ruta_completa = os.path.join(
                 self.config.directorio_reportes,
                 nombre_archivo
             )
 
-            df.to_excel(ruta_completa, index=False, sheet_name='Incompletos')
+            # Exportar a Excel usando openpyxl
+            df.to_excel(ruta_completa, index=False, engine='openpyxl', sheet_name='Incompletos')
 
             logger.info(
                 f"Reporte exportado: {ruta_completa} "
-                f"({len(resultados)} registros)"
+                f"({len(df)} registros)"
             )
 
             return ruta_completa

@@ -76,6 +76,12 @@ class ServicioProcesamiento:
         try:
             inicializar_pool()
 
+            # Limpiar tabla de resultados para empezar con datos frescos
+            logger.info("Limpiando tabla de resultados previa...")
+            registros_eliminados = self.repo_resultados.limpiar_tabla()
+            logger.info(f"✓ Tabla limpiada: {registros_eliminados} registros eliminados")
+            logger.info("=" * 60)
+
             personas = self.repo_personas.obtener_personas_a_consultar()
             estadisticas['total_personas'] = len(personas)
             logger.info(f"Personas a procesar: {len(personas)}")
@@ -165,27 +171,40 @@ class ServicioProcesamiento:
                         pais=persona.pais
                     )
 
-                    if resultado_busqueda.exito:
-                        # Capturar screenshot si hay resultados
-                        if resultado_busqueda.cantidad_resultados > 0:
-                            try:
-                                captura.capturar(id_persona=persona.id_persona)
-                                logger.info(
-                                    f"Screenshot capturado para persona {persona.id_persona}"
-                                )
-                            except Exception as e:
-                                logger.error(
-                                    f"Error al capturar screenshot para persona {persona.id_persona}: {e}. "
-                                    f"Continuando con el guardado en BD."
-                                )
+                    # Clasificar según resultado de búsqueda
+                    if resultado_busqueda.exito and resultado_busqueda.cantidad_resultados > 0:
+                        # Búsqueda exitosa CON resultados → OK
+                        # Capturar screenshot
+                        try:
+                            captura.capturar(id_persona=persona.id_persona)
+                            logger.info(
+                                f"Screenshot capturado para persona {persona.id_persona}"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error al capturar screenshot para persona {persona.id_persona}: {e}. "
+                                f"Continuando con el guardado en BD."
+                            )
 
                         estado = ESTADO_OK
                         stats['ok'] += 1
-                    else:
-                        logger.warning(
-                            f"Búsqueda OFAC falló para persona {persona.id_persona}: "
-                            f"{resultado_busqueda.mensaje_error}"
+                        logger.info(
+                            f"Persona {persona.id_persona}: OK - Cantidad encontrada: {resultado_busqueda.cantidad_resultados}"
                         )
+                    else:
+                        # Búsqueda sin resultados O error técnico → NOK
+                        if resultado_busqueda.exito and resultado_busqueda.cantidad_resultados == 0:
+                            # Búsqueda exitosa pero SIN resultados
+                            logger.info(
+                                f"Persona {persona.id_persona}: NOK - Búsqueda exitosa pero sin resultados (cantidad=0)"
+                            )
+                        else:
+                            # Error técnico en la búsqueda
+                            logger.warning(
+                                f"Persona {persona.id_persona}: NOK - Búsqueda falló: "
+                                f"{resultado_busqueda.mensaje_error}"
+                            )
+
                         estado = ESTADO_NOK
                         stats['nok'] += 1
 

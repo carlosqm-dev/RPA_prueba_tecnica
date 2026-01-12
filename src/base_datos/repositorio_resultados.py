@@ -198,3 +198,85 @@ class RepositorioResultados:
         except Exception as e:
             logger.error(f"Error al obtener todos los resultados: {e}")
             raise
+
+    def obtener_incompletos_con_direccion(self) -> pd.DataFrame:
+        """
+        Obtiene todos los registros con estado 'Información incompleta'
+        incluyendo el campo dirección de la tabla MaestraDetallePersonas.
+
+        Returns:
+            DataFrame con los registros incompletos y sus direcciones
+        """
+        from src.config.constantes import TABLA_MAESTRA, ESTADO_INFORMACION_INCOMPLETA
+
+        query = f"""
+            SELECT
+                r.id,
+                r."idPersona",
+                r."nombrePersona",
+                m.direccion,
+                r.pais,
+                r."cantidadDeResultados",
+                r."estadoTransaccion"
+            FROM {TABLA_RESULTADOS} r
+            LEFT JOIN {TABLA_MAESTRA} m ON r."idPersona" = m."idPersona"
+            WHERE r."estadoTransaccion" = %s
+            ORDER BY r.id
+        """
+
+        try:
+            with conexion_bd() as conexion:
+                df = pd.read_sql_query(query, conexion, params=(ESTADO_INFORMACION_INCOMPLETA,))
+
+            logger.info(f"Se obtuvieron {len(df)} registros incompletos con dirección")
+            return df
+
+        except Exception as e:
+            logger.error(f"Error al obtener registros incompletos con dirección: {e}")
+            raise
+
+    def limpiar_tabla(self) -> int:
+        """
+        Limpia completamente la tabla de resultados eliminando todos los registros.
+        Usa DELETE para eliminar todos los registros (no requiere permisos especiales).
+
+        Returns:
+            Número de registros eliminados
+
+        Warning:
+            Esta operación es IRREVERSIBLE. Se eliminarán TODOS los datos de la tabla.
+
+        Note:
+            El contador de IDs NO se reinicia con DELETE (solo se reinicia con TRUNCATE
+            que requiere permisos especiales). Los nuevos registros continuarán desde
+            el último ID + 1.
+        """
+        # Primero contar cuántos registros hay
+        query_count = f"SELECT COUNT(*) FROM {TABLA_RESULTADOS}"
+
+        # DELETE FROM elimina todos los registros
+        query_delete = f"DELETE FROM {TABLA_RESULTADOS}"
+
+        try:
+            with conexion_bd() as conexion:
+                cursor = conexion.cursor()
+
+                # Contar registros antes de limpiar
+                cursor.execute(query_count)
+                registros_previos = cursor.fetchone()[0]
+
+                # Ejecutar DELETE
+                cursor.execute(query_delete)
+                registros_eliminados = cursor.rowcount
+                conexion.commit()
+                cursor.close()
+
+            logger.info(
+                f"Tabla {TABLA_RESULTADOS} limpiada completamente. "
+                f"Se eliminaron {registros_eliminados} registros."
+            )
+            return registros_eliminados
+
+        except Exception as e:
+            logger.error(f"Error al limpiar tabla de resultados: {e}")
+            raise
