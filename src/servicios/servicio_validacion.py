@@ -2,8 +2,7 @@
 Servicio de validación de datos de personas.
 """
 
-import logging
-from typing import List, Tuple
+from typing import List
 from dataclasses import dataclass
 
 from src.base_datos.repositorio_personas import Persona
@@ -12,8 +11,6 @@ from src.config.constantes import (
     ESTADO_INFORMACION_INCOMPLETA,
     ESTADO_NO_CRUZA_MAESTRA
 )
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,26 +42,12 @@ class ServicioValidacion:
             if self._no_cruza_con_maestra(persona):
                 resultado = self._crear_resultado_no_cruza(persona)
                 resultados_no_cruzan.append(resultado)
-                logger.debug(
-                    f"Persona {persona.id_persona} no cruza con maestra"
-                )
-
             elif self._tiene_informacion_incompleta(persona):
                 resultado = self._crear_resultado_incompleto(persona)
                 resultados_incompletos.append(resultado)
-                logger.debug(
-                    f"Persona {persona.id_persona} tiene información incompleta"
-                )
 
             else:
                 personas_validas.append(persona)
-
-        logger.info(
-            f"Clasificación completada: "
-            f"{len(personas_validas)} válidas, "
-            f"{len(resultados_no_cruzan)} no cruzan, "
-            f"{len(resultados_incompletos)} incompletas"
-        )
 
         return ResultadoValidacion(
             personas_validas=personas_validas,

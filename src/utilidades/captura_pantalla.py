@@ -35,7 +35,6 @@ class CapturaPantalla:
         """Crea el directorio de capturas si no existe."""
         if not os.path.exists(self.directorio):
             os.makedirs(self.directorio)
-            logger.info(f"Directorio de capturas creado: {self.directorio}")
 
     def capturar(
         self,
@@ -54,12 +53,10 @@ class CapturaPantalla:
             Ruta del archivo guardado o None si falla
         """
         try:
-            # Asegurar zoom al 60% antes de capturar
             try:
                 self.navegador.execute_script("document.body.style.zoom='60%'")
-                logger.debug("Zoom establecido al 60% antes de capturar")
-            except Exception as e:
-                logger.warning(f"No se pudo establecer el zoom antes de capturar: {e}")
+            except Exception:
+                pass
 
             fecha = datetime.now().strftime(FORMATO_FECHA_CAPTURA)
             nombre_base = FORMATO_NOMBRE_CAPTURA.format(
@@ -73,12 +70,10 @@ class CapturaPantalla:
             ruta_completa = os.path.join(self.directorio, nombre_base)
 
             self.navegador.save_screenshot(ruta_completa)
-            logger.info(f"Captura guardada: {ruta_completa}")
-
             return ruta_completa
 
         except Exception as e:
-            logger.error(f"Error al capturar pantalla: {e}")
+            logger.error(f"Error en captura: {e}")
             return None
 
     def capturar_elemento(
@@ -109,12 +104,10 @@ class CapturaPantalla:
             ruta_completa = os.path.join(self.directorio, nombre_archivo)
 
             elemento.screenshot(ruta_completa)
-            logger.info(f"Captura de elemento guardada: {ruta_completa}")
-
             return ruta_completa
 
         except Exception as e:
-            logger.error(f"Error al capturar elemento: {e}")
+            logger.error(f"Error en captura: {e}")
             return None
 
     def listar_capturas(self) -> list:
@@ -131,8 +124,7 @@ class CapturaPantalla:
                 if f.endswith('.png')
             ]
             return sorted(archivos)
-        except Exception as e:
-            logger.error(f"Error al listar capturas: {e}")
+        except Exception:
             return []
 
     def limpiar_capturas_antiguas(self, dias: int = 30) -> int:
@@ -155,13 +147,8 @@ class CapturaPantalla:
                 if os.path.getmtime(archivo) < limite:
                     os.remove(archivo)
                     eliminados += 1
-                    logger.debug(f"Captura eliminada: {archivo}")
-
-            if eliminados > 0:
-                logger.info(f"Se eliminaron {eliminados} capturas antiguas")
 
             return eliminados
 
-        except Exception as e:
-            logger.error(f"Error al limpiar capturas: {e}")
+        except Exception:
             return eliminados

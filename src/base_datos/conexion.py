@@ -26,7 +26,6 @@ def inicializar_pool(min_conexiones: int = 1, max_conexiones: int = 10) -> None:
     global _pool_conexiones
 
     if _pool_conexiones is not None:
-        logger.warning("El pool de conexiones ya está inicializado")
         return
 
     try:
@@ -40,9 +39,8 @@ def inicializar_pool(min_conexiones: int = 1, max_conexiones: int = 10) -> None:
             user=config.base_datos.usuario,
             password=config.base_datos.contrasena
         )
-        logger.info("Pool de conexiones inicializado correctamente")
     except Error as e:
-        logger.error(f"Error al inicializar el pool de conexiones: {e}")
+        logger.error(f"Error al inicializar pool de conexiones: {e}")
         raise
 
 
@@ -63,10 +61,9 @@ def obtener_conexion():
 
     try:
         conexion = _pool_conexiones.getconn()
-        logger.debug("Conexión obtenida del pool")
         return conexion
     except Error as e:
-        logger.error(f"Error al obtener conexión del pool: {e}")
+        logger.error(f"Error al obtener conexión: {e}")
         raise
 
 
@@ -81,7 +78,6 @@ def cerrar_conexion(conexion) -> None:
 
     if _pool_conexiones is not None and conexion is not None:
         _pool_conexiones.putconn(conexion)
-        logger.debug("Conexión devuelta al pool")
 
 
 def cerrar_pool() -> None:
@@ -91,7 +87,6 @@ def cerrar_pool() -> None:
     if _pool_conexiones is not None:
         _pool_conexiones.closeall()
         _pool_conexiones = None
-        logger.info("Pool de conexiones cerrado")
 
 
 class ConexionContextManager:

@@ -56,14 +56,11 @@ class BuscadorOfac:
                 EC.presence_of_element_located((By.TAG_NAME, "form"))
             )
 
-            # Establecer zoom al 60% para capturas completas
             try:
                 self.navegador.execute_script("document.body.style.zoom='60%'")
-                logger.info("Zoom establecido al 60%")
-            except Exception as e:
-                logger.warning(f"No se pudo establecer el zoom: {e}")
+            except Exception:
+                pass
 
-            logger.info("Navegación a OFAC exitosa")
             return True
 
         except TimeoutException:
@@ -106,19 +103,12 @@ class BuscadorOfac:
 
                 cantidad = self._extraer_cantidad_resultados()
 
-                logger.info(
-                    f"Búsqueda completada para '{nombre}': {cantidad} resultados"
-                )
-
                 return ResultadoBusqueda(
                     exito=True,
                     cantidad_resultados=cantidad
                 )
 
             except Exception as e:
-                logger.warning(
-                    f"Intento {intento + 1}/{MAX_REINTENTOS} fallido para '{nombre}': {e}"
-                )
                 if intento < MAX_REINTENTOS - 1:
                     time.sleep(TIEMPO_ENTRE_REINTENTOS)
                     self.navegar_a_ofac()
@@ -147,7 +137,7 @@ class BuscadorOfac:
             campo.clear()
             campo.send_keys(direccion)
         except NoSuchElementException:
-            logger.warning("Campo de dirección no encontrado")
+            pass
 
     def _seleccionar_pais(self, pais: str) -> None:
         """Selecciona el país en el dropdown."""
@@ -170,10 +160,8 @@ class BuscadorOfac:
                     select.select_by_visible_text(opcion.text)
                     return
 
-            logger.warning(f"País '{pais}' no encontrado en el dropdown")
-
         except NoSuchElementException:
-            logger.warning("Campo de país no encontrado")
+            pass
 
     def _hacer_clic_buscar(self) -> None:
         """Hace clic en el botón de búsqueda."""
@@ -196,7 +184,7 @@ class BuscadorOfac:
             boton_reset.click()
             time.sleep(1)  # Esperar a que se limpie el formulario
         except NoSuchElementException:
-            logger.warning("Botón Reset no encontrado")
+            pass
 
     def _extraer_cantidad_resultados(self) -> int:
         """
@@ -219,11 +207,7 @@ class BuscadorOfac:
 
             return 0
 
-        except NoSuchElementException:
-            logger.warning("Elemento de conteo de resultados no encontrado")
-            return 0
-        except Exception as e:
-            logger.warning(f"Error al extraer cantidad de resultados: {e}")
+        except (NoSuchElementException, Exception):
             return 0
 
     def capturar_pantalla(self, ruta_archivo: str) -> bool:
@@ -238,8 +222,7 @@ class BuscadorOfac:
         """
         try:
             self.navegador.save_screenshot(ruta_archivo)
-            logger.info(f"Captura guardada en: {ruta_archivo}")
             return True
         except Exception as e:
-            logger.error(f"Error al capturar pantalla: {e}")
+            logger.error(f"Error en captura: {e}")
             return False

@@ -1,129 +1,115 @@
 # Bot RPA - Verificación de Sanciones OFAC
 
-Bot de automatización robótica de procesos (RPA) que realiza verificaciones de sanciones OFAC para personas almacenadas en una base de datos PostgreSQL.
+Bot de automatización robótica de procesos (RPA) desarrollado en Python que consulta personas almacenadas en una base de datos PostgreSQL y verifica si se encuentran en la lista de sanciones de la OFAC (Office of Foreign Assets Control) del Departamento del Tesoro de Estados Unidos. El proceso incluye la captura de evidencias, almacenamiento de resultados y generación de reportes.
 
-## Descripción
+---
 
-Este bot automatiza el proceso de verificación de sanciones de la OFAC (Office of Foreign Assets Control) mediante:
+## Requisitos Previos
 
-1. Consulta de personas en la base de datos
-2. Validación de datos (cruce con tabla maestra)
-3. Búsqueda automática en el sitio web de OFAC
-4. Captura de resultados y screenshots
-5. Almacenamiento de resultados en la base de datos
-6. Exportación de reportes a Excel
+Antes de ejecutar el proyecto, asegúrese de tener instalado:
+
+- **Python 3.8** o superior
+- **Google Chrome** (última versión estable)
+- **Git** (opcional, para clonar el repositorio)
+
+---
 
 ## Estructura del Proyecto
 
 ```
 prueba_tecnica/
 ├── src/
-│   ├── main.py                      # Punto de entrada
-│   ├── config/                      # Configuración
-│   │   ├── configuracion.py         # Variables de configuración
-│   │   └── constantes.py            # Constantes del proyecto
-│   ├── base_datos/                  # Capa de datos
-│   │   ├── conexion.py              # Pool de conexiones
-│   │   ├── repositorio_personas.py  # CRUD de personas
-│   │   └── repositorio_resultados.py # CRUD de resultados
-│   ├── scraping/                    # Web scraping
-│   │   ├── navegador.py             # Configuración Selenium
-│   │   └── buscador_ofac.py         # Lógica de búsqueda OFAC
-│   ├── servicios/                   # Lógica de negocio
-│   │   ├── servicio_validacion.py   # Validación de datos
-│   │   ├── servicio_procesamiento.py # Orquestador principal
-│   │   └── servicio_exportacion.py  # Exportación a Excel
-│   └── utilidades/                  # Utilidades
-│       ├── logger.py                # Configuración de logging
-│       └── captura_pantalla.py      # Manejo de screenshots
-├── tests/                           # Pruebas unitarias
-├── capturas/                        # Screenshots (generado)
-├── reportes/                        # Archivos Excel (generado)
-├── logs/                            # Archivos de log (generado)
-├── .env                             # Variables de entorno
-├── .gitignore
-├── requirements.txt
+│   ├── main.py                        # Punto de entrada
+│   ├── config/                        # Configuración y constantes
+│   ├── base_datos/                    # Conexión y repositorios PostgreSQL
+│   ├── scraping/                      # Navegador y buscador OFAC
+│   ├── servicios/                     # Lógica de negocio
+│   └── utilidades/                    # Logger y capturas de pantalla
+├── tests/                             # Pruebas del proyecto
+├── capturas/                          # Screenshots generados
+├── reportes/                          # Reportes Excel exportados
+├── logs/                              # Archivos de log y resúmenes
+├── .env                               # Variables de entorno (no versionado)
+├── .env.example                       # Plantilla de variables de entorno
+├── requirements.txt                   # Dependencias Python
 └── README.md
 ```
 
-## Requisitos
-
-- Python 3.8+
-- Google Chrome
-- ChromeDriver (compatible con tu versión de Chrome)
+---
 
 ## Instalación
 
-1. Clonar o descargar el proyecto
+### 1. Crear entorno virtual
 
-2. Crear y activar el entorno virtual:
+```bash
+python -m venv .venv
+```
+
+### 2. Activar entorno virtual
+
+**Windows:**
+```bash
+.venv\Scripts\activate
+```
+
+**Linux/Mac:**
+```bash
+source .venv/bin/activate
+```
+
+### 3. Instalar dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Configuración
+
+### Variables de Entorno
+
+1. Copiar el archivo de ejemplo:
+
    ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
-   source .venv/bin/activate  # Linux/Mac
+   copy .env.example .env
    ```
 
-3. Instalar dependencias:
-   ```bash
-   pip install -r requirements.txt
+2. Editar el archivo `.env` con las credenciales correspondientes:
+
+   ```env
+   # Base de Datos
+   DB_HOST=tu_host
+   DB_PORT=5432
+   DB_NAME=tu_base_datos
+   DB_USER=tu_usuario
+   DB_PASSWORD=tu_contraseña
+
+   # Selenium
+   OFAC_URL=https://sanctionssearch.ofac.treas.gov/
+   SELENIUM_IMPLICIT_WAIT=10
+   SELENIUM_EXPLICIT_WAIT=20
+   SELENIUM_HEADLESS=false
+
+   # Directorios
+   DIR_CAPTURAS=capturas
+   DIR_REPORTES=reportes
+   DIR_LOGS=logs
    ```
 
-4. Configurar variables de entorno:
-   - Copiar `.env.example` a `.env`
-   - Ajustar los valores según tu entorno
+---
 
-## Uso
+## Ejecución
 
-Ejecutar el bot:
+Desde la raíz del proyecto, con el entorno virtual activado:
 
 ```bash
 python -m src.main
 ```
 
-O desde la raíz del proyecto:
+El bot mostrará el progreso en consola y al finalizar generará:
+- Un resumen en `logs/resumen_rpa_ofac_YYYYMMDD.log`
+- Capturas de pantalla en `capturas/`
+- Reporte Excel de registros incompletos en `reportes/`
 
-```bash
-python src/main.py
-```
-
-## Configuración
-
-Las variables de configuración se pueden ajustar en el archivo `.env`:
-
-| Variable | Descripción | Valor por defecto |
-|----------|-------------|-------------------|
-| `DB_HOST` | Host de la base de datos | localhost |
-| `DB_PORT` | Puerto de la base de datos | 5432 |
-| `DB_NAME` | Nombre de la base de datos | prueba-tecnica |
-| `DB_USER` | Usuario de la base de datos | - |
-| `DB_PASSWORD` | Contraseña de la base de datos | - |
-| `SELENIUM_HEADLESS` | Ejecutar sin interfaz gráfica | false |
-
-## Estados de Transacción
-
-| Estado | Descripción |
-|--------|-------------|
-| `OK` | Búsqueda completada exitosamente |
-| `NOK` | Error en la búsqueda |
-| `Información incompleta` | Falta dirección o país |
-| `No cruza con maestra` | Persona no encontrada en tabla maestra |
-
-## Pruebas
-
-Ejecutar pruebas unitarias:
-
-```bash
-python -m pytest tests/
-```
-
-## Entregables
-
-1. Código fuente del proyecto
-2. Video de ejecución
-3. Screenshots capturados (carpeta `capturas/`)
-4. Tabla de resultados actualizada en la base de datos
-5. Reporte Excel con registros incompletos
-
-## Autor
-
-Desarrollado como prueba técnica para PrevalentWare.
+---

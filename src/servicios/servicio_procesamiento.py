@@ -51,7 +51,6 @@ class ServicioProcesamiento:
         for directorio in directorios:
             if not os.path.exists(directorio):
                 os.makedirs(directorio)
-                logger.info(f"Directorio creado: {directorio}")
 
     def ejecutar(self) -> dict:
         """
@@ -69,25 +68,20 @@ class ServicioProcesamiento:
             'errores': 0
         }
 
-        logger.info("=" * 60)
-        logger.info("INICIANDO PROCESO RPA - VERIFICACIÓN OFAC")
-        logger.info("=" * 60)
+        print("\n" + "=" * 50)
+        print("BOT RPA - VERIFICACIÓN OFAC")
+        print("=" * 50)
 
         try:
             inicializar_pool()
-
-            # Limpiar tabla de resultados para empezar con datos frescos
-            logger.info("Limpiando tabla de resultados previa...")
-            registros_eliminados = self.repo_resultados.limpiar_tabla()
-            logger.info(f"✓ Tabla limpiada: {registros_eliminados} registros eliminados")
-            logger.info("=" * 60)
+            self.repo_resultados.limpiar_tabla()
 
             personas = self.repo_personas.obtener_personas_a_consultar()
             estadisticas['total_personas'] = len(personas)
-            logger.info(f"Personas a procesar: {len(personas)}")
+            print(f"Personas a procesar: {len(personas)}")
 
             if not personas:
-                logger.warning("No hay personas para procesar")
+                print("No hay personas para procesar")
                 return estadisticas
 
             resultado_validacion = self.servicio_validacion.clasificar_personas(
@@ -120,13 +114,8 @@ class ServicioProcesamiento:
 
             self.servicio_exportacion.exportar_incompletos()
 
-            logger.info("=" * 60)
-            logger.info("PROCESO COMPLETADO")
-            logger.info(f"Estadísticas: {estadisticas}")
-            logger.info("=" * 60)
-
         except Exception as e:
-            logger.error(f"Error en el proceso principal: {e}")
+            logger.error(f"Error en proceso principal: {e}")
             raise
 
         finally:
@@ -155,14 +144,9 @@ class ServicioProcesamiento:
                 stats['errores'] = len(personas)
                 return stats
 
-            for persona in personas:
+            for i, persona in enumerate(personas, 1):
                 try:
-                    # Verificar si ya existe resultado para esta persona
-                    if self.repo_resultados.existe_resultado_persona(persona.id_persona):
-                        logger.warning(
-                            f"Ya existe resultado para persona {persona.id_persona}. "
-                            f"Se insertará un nuevo registro (no hay constraint UNIQUE)."
-                        )
+                    print(f"  [{i}/{len(personas)}] {persona.nombre_persona}...", end=" ")
 
                     # Realizar búsqueda en OFAC
                     resultado_busqueda = buscador.buscar_persona(
@@ -171,44 +155,19 @@ class ServicioProcesamiento:
                         pais=persona.pais
                     )
 
-                    # Clasificar según resultado de búsqueda
                     if resultado_busqueda.exito and resultado_busqueda.cantidad_resultados > 0:
-                        # Búsqueda exitosa CON resultados → OK
-                        # Capturar screenshot
                         try:
                             captura.capturar(id_persona=persona.id_persona)
-                            logger.info(
-                                f"Screenshot capturado para persona {persona.id_persona}"
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Error al capturar screenshot para persona {persona.id_persona}: {e}. "
-                                f"Continuando con el guardado en BD."
-                            )
-
+                        except Exception:
+                            pass
                         estado = ESTADO_OK
                         stats['ok'] += 1
-                        logger.info(
-                            f"Persona {persona.id_persona}: OK - Cantidad encontrada: {resultado_busqueda.cantidad_resultados}"
-                        )
+                        print(f"OK ({resultado_busqueda.cantidad_resultados} resultados)")
                     else:
-                        # Búsqueda sin resultados O error técnico → NOK
-                        if resultado_busqueda.exito and resultado_busqueda.cantidad_resultados == 0:
-                            # Búsqueda exitosa pero SIN resultados
-                            logger.info(
-                                f"Persona {persona.id_persona}: NOK - Búsqueda exitosa pero sin resultados (cantidad=0)"
-                            )
-                        else:
-                            # Error técnico en la búsqueda
-                            logger.warning(
-                                f"Persona {persona.id_persona}: NOK - Búsqueda falló: "
-                                f"{resultado_busqueda.mensaje_error}"
-                            )
-
                         estado = ESTADO_NOK
                         stats['nok'] += 1
+                        print("NOK")
 
-                    # Crear objeto Resultado
                     resultado = Resultado(
                         id_persona=persona.id_persona,
                         nombre_persona=persona.nombre_persona,
@@ -217,27 +176,15 @@ class ServicioProcesamiento:
                         estado_transaccion=estado
                     )
 
-                    # Validar campos obligatorios antes de insertar
                     if not self._validar_resultado(resultado):
-                        logger.error(
-                            f"Validación fallida para persona {persona.id_persona}. "
-                            f"No se insertará en BD."
-                        )
                         stats['errores'] += 1
                         continue
 
-                    # Insertar resultado en BD
-                    id_insertado = self.repo_resultados.insertar(resultado)
-                    logger.info(
-                        f"Resultado insertado con ID {id_insertado} para persona {persona.id_persona}: "
-                        f"{estado}, cantidad={resultado_busqueda.cantidad_resultados}"
-                    )
+                    self.repo_resultados.insertar(resultado)
 
                 except Exception as e:
-                    logger.error(
-                        f"Error procesando persona {persona.id_persona}: {e}",
-                        exc_info=True
-                    )
+                    print(f"ERROR")
+                    logger.error(f"Error procesando persona {persona.id_persona}: {e}")
                     stats['errores'] += 1
 
         return stats
@@ -252,19 +199,10 @@ class ServicioProcesamiento:
         Returns:
             True si es válido, False en caso contrario
         """
-        # Validar idPersona
         if not resultado.id_persona or resultado.id_persona <= 0:
-            logger.error(f"idPersona es obligatorio y debe ser > 0: {resultado.id_persona}")
             return False
-
-        # Validar nombrePersona
         if not resultado.nombre_persona or resultado.nombre_persona.strip() == "":
-            logger.error(f"nombrePersona es obligatorio y no puede estar vacío")
             return False
-
-        # Validar estadoTransaccion
         if not resultado.estado_transaccion or resultado.estado_transaccion.strip() == "":
-            logger.error(f"estadoTransaccion es obligatorio y no puede estar vacío")
             return False
-
         return True

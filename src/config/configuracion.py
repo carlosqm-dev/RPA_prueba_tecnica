@@ -7,6 +7,10 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 @dataclass
 class ConfiguracionBaseDatos:
@@ -48,15 +52,14 @@ class Configuracion:
 
     def _inicializar(self):
         """Inicializa la configuración cargando variables de entorno."""
+        self._validar_variables_requeridas()
+
         self.base_datos = ConfiguracionBaseDatos(
-            host=os.getenv(
-                'DB_HOST',
-                'rpa-prevalentware.c3rkad1ay1ao.us-east-1.rds.amazonaws.com'
-            ),
+            host=os.getenv('DB_HOST'),
             puerto=os.getenv('DB_PORT', '5432'),
-            base_datos=os.getenv('DB_NAME', 'prueba-tecnica'),
-            usuario=os.getenv('DB_USER', 'user9145'),
-            contrasena=os.getenv('DB_PASSWORD', 'pruebauser91452023')
+            base_datos=os.getenv('DB_NAME'),
+            usuario=os.getenv('DB_USER'),
+            contrasena=os.getenv('DB_PASSWORD')
         )
 
         self.selenium = ConfiguracionSelenium(
@@ -72,6 +75,17 @@ class Configuracion:
         self.directorio_capturas = os.getenv('DIR_CAPTURAS', 'capturas')
         self.directorio_reportes = os.getenv('DIR_REPORTES', 'reportes')
         self.directorio_logs = os.getenv('DIR_LOGS', 'logs')
+
+    def _validar_variables_requeridas(self):
+        """Valida que las variables de entorno requeridas estén definidas."""
+        variables_requeridas = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']
+        faltantes = [var for var in variables_requeridas if not os.getenv(var)]
+
+        if faltantes:
+            raise EnvironmentError(
+                f"Variables de entorno requeridas no definidas: {', '.join(faltantes)}. "
+                f"Verifica tu archivo .env"
+            )
 
 
 def obtener_configuracion() -> Configuracion:

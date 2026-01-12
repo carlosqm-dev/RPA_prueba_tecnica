@@ -30,7 +30,6 @@ def crear_navegador(headless: Optional[bool] = None) -> webdriver.Chrome:
     global _navegador
 
     if _navegador is not None:
-        logger.warning("Ya existe una instancia del navegador")
         return _navegador
 
     config = Configuracion()
@@ -64,14 +63,10 @@ def crear_navegador(headless: Optional[bool] = None) -> webdriver.Chrome:
         if not headless:
             _navegador.maximize_window()
 
-        logger.info("Navegador Chrome iniciado correctamente")
-        logger.info(f"Modo headless: {headless}")
-        logger.info(f"Tamaño de ventana: {'Maximizada' if not headless else '1920x1080'}")
-
         return _navegador
 
     except Exception as e:
-        logger.error(f"Error al crear el navegador: {e}")
+        logger.error(f"Error al crear navegador: {e}")
         raise
 
 
@@ -95,14 +90,12 @@ def establecer_zoom(zoom: int = 60) -> None:
     global _navegador
 
     if _navegador is None:
-        logger.warning("No hay navegador activo para establecer zoom")
         return
 
     try:
         _navegador.execute_script(f"document.body.style.zoom='{zoom}%'")
-        logger.info(f"Zoom establecido al {zoom}%")
     except Exception as e:
-        logger.error(f"Error al establecer el zoom: {e}")
+        logger.error(f"Error al establecer zoom: {e}")
 
 
 def cerrar_navegador() -> None:
@@ -112,9 +105,8 @@ def cerrar_navegador() -> None:
     if _navegador is not None:
         try:
             _navegador.quit()
-            logger.info("Navegador cerrado correctamente")
         except Exception as e:
-            logger.error(f"Error al cerrar el navegador: {e}")
+            logger.error(f"Error al cerrar navegador: {e}")
         finally:
             _navegador = None
 

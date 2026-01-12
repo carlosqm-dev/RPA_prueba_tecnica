@@ -5,43 +5,40 @@ Punto de entrada principal del bot RPA para verificación OFAC.
 import sys
 import logging
 
-from src.utilidades.logger import configurar_logging_global
+from src.utilidades.logger import configurar_logging_global, escribir_resumen
 from src.servicios import ServicioProcesamiento
 
 
 def main():
     """Función principal que ejecuta el bot RPA."""
-    configurar_logging_global(nivel=logging.INFO)
-    logger = logging.getLogger("rpa_ofac")
-
-    logger.info("=" * 60)
-    logger.info("BOT RPA - VERIFICACIÓN DE SANCIONES OFAC")
-    logger.info("=" * 60)
+    configurar_logging_global(nivel=logging.WARNING)
 
     try:
         servicio = ServicioProcesamiento()
         estadisticas = servicio.ejecutar()
 
-        logger.info("\n" + "=" * 60)
-        logger.info("RESUMEN DE EJECUCIÓN")
-        logger.info("=" * 60)
-        logger.info(f"  Total personas procesadas: {estadisticas['total_personas']}")
-        logger.info(f"  Búsquedas exitosas (OK):   {estadisticas['procesadas_ok']}")
-        logger.info(f"  Búsquedas fallidas (NOK):  {estadisticas['procesadas_nok']}")
-        logger.info(f"  No cruzan con maestra:     {estadisticas['no_cruzan_maestra']}")
-        logger.info(f"  Información incompleta:    {estadisticas['informacion_incompleta']}")
-        logger.info(f"  Errores:                   {estadisticas['errores']}")
-        logger.info("=" * 60)
+        print("\n" + "=" * 50)
+        print("RESUMEN")
+        print("=" * 50)
+        print(f"  Total procesadas:    {estadisticas['total_personas']}")
+        print(f"  OK:                  {estadisticas['procesadas_ok']}")
+        print(f"  NOK:                 {estadisticas['procesadas_nok']}")
+        print(f"  No cruzan maestra:   {estadisticas['no_cruzan_maestra']}")
+        print(f"  Info incompleta:     {estadisticas['informacion_incompleta']}")
+        print(f"  Errores:             {estadisticas['errores']}")
+        print("=" * 50)
+
+        ruta_resumen = escribir_resumen(estadisticas)
+        print(f"\nResumen guardado en: {ruta_resumen}")
 
         return 0
 
     except KeyboardInterrupt:
-        logger.warning("Proceso interrumpido por el usuario")
+        print("\nProceso interrumpido")
         return 1
 
     except Exception as e:
-        logger.error(f"Error fatal en la ejecución: {e}")
-        logger.exception("Detalle del error:")
+        print(f"\nError: {e}")
         return 1
 
 

@@ -59,10 +59,6 @@ class RepositorioResultados:
                 conexion.commit()
                 cursor.close()
 
-            logger.info(
-                f"Resultado insertado para persona {resultado.id_persona}: "
-                f"{resultado.estado_transaccion}"
-            )
             return id_insertado
 
         except Exception as e:
@@ -106,11 +102,10 @@ class RepositorioResultados:
                 registros_insertados = cursor.rowcount
                 cursor.close()
 
-            logger.info(f"Se insertaron {registros_insertados} resultados en lote")
             return registros_insertados
 
         except Exception as e:
-            logger.error(f"Error al insertar resultados en lote: {e}")
+            logger.error(f"Error al insertar lote: {e}")
             raise
 
     def obtener_por_estado(self, estado: str) -> List[Resultado]:
@@ -149,7 +144,7 @@ class RepositorioResultados:
             return resultados
 
         except Exception as e:
-            logger.error(f"Error al obtener resultados por estado {estado}: {e}")
+            logger.error(f"Error al obtener resultados: {e}")
             raise
 
     def existe_resultado_persona(self, id_persona: int) -> bool:
@@ -178,7 +173,7 @@ class RepositorioResultados:
             return count > 0
 
         except Exception as e:
-            logger.error(f"Error al verificar resultado para persona {id_persona}: {e}")
+            logger.error(f"Error al verificar resultado: {e}")
             raise
 
     def obtener_todos(self) -> pd.DataFrame:
@@ -196,7 +191,7 @@ class RepositorioResultados:
             return df
 
         except Exception as e:
-            logger.error(f"Error al obtener todos los resultados: {e}")
+            logger.error(f"Error al obtener resultados: {e}")
             raise
 
     def obtener_incompletos_con_direccion(self) -> pd.DataFrame:
@@ -228,11 +223,10 @@ class RepositorioResultados:
             with conexion_bd() as conexion:
                 df = pd.read_sql_query(query, conexion, params=(ESTADO_INFORMACION_INCOMPLETA,))
 
-            logger.info(f"Se obtuvieron {len(df)} registros incompletos con dirección")
             return df
 
         except Exception as e:
-            logger.error(f"Error al obtener registros incompletos con dirección: {e}")
+            logger.error(f"Error al obtener incompletos: {e}")
             raise
 
     def limpiar_tabla(self) -> int:
@@ -271,12 +265,8 @@ class RepositorioResultados:
                 conexion.commit()
                 cursor.close()
 
-            logger.info(
-                f"Tabla {TABLA_RESULTADOS} limpiada completamente. "
-                f"Se eliminaron {registros_eliminados} registros."
-            )
             return registros_eliminados
 
         except Exception as e:
-            logger.error(f"Error al limpiar tabla de resultados: {e}")
+            logger.error(f"Error al limpiar tabla: {e}")
             raise

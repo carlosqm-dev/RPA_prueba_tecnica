@@ -515,16 +515,16 @@ Escenario: Validar configuración al inicio
 | HU-01 | Conexión a Base de Datos | Alta | Media | ✅ COMPLETADA |
 | HU-02 | Obtener Personas a Consultar | Alta | Baja | ✅ COMPLETADA |
 | HU-03 | Validar Información Completa | Alta | Media | ✅ COMPLETADA |
-| HU-04 | Inserción Masiva de Registros | Alta | Media | ❌ PENDIENTE |
+| HU-04 | Inserción Masiva de Registros | Alta | Media | ✅ COMPLETADA |
 | HU-05 | Navegar al Sitio OFAC | Alta | Baja | ✅ COMPLETADA |
 | HU-06 | Llenar Formulario OFAC | Alta | Media | ✅ COMPLETADA |
 | HU-07 | Ejecutar Búsqueda en OFAC | Alta | Alta | ✅ COMPLETADA |
-| HU-08 | Capturar Screenshot | Media | Baja | ❌ PENDIENTE |
-| HU-09 | Guardar Resultado en BD | Alta | Media | ❌ PENDIENTE |
-| HU-10 | Exportar Reporte Excel | Media | Baja | ❌ PENDIENTE |
-| HU-11 | Procesamiento Completo | Alta | Alta | ❌ PENDIENTE |
-| HU-12 | Logging y Trazabilidad | Media | Baja | ❌ PENDIENTE |
-| HU-13 | Manejo de Reintentos | Media | Media | ❌ PENDIENTE |
+| HU-08 | Capturar Screenshot | Media | Baja | ✅ COMPLETADA |
+| HU-09 | Guardar Resultado en BD | Alta | Media | ✅ COMPLETADA |
+| HU-10 | Exportar Reporte Excel | Media | Baja | ✅ COMPLETADA |
+| HU-11 | Procesamiento Completo | Alta | Alta | ✅ COMPLETADA |
+| HU-12 | Logging y Trazabilidad | Media | Baja | ✅ COMPLETADA  |
+| HU-13 | Manejo de Reintentos | Media | Media | ✅ COMPLETADA  |
 | HU-14 | Configuración del Sistema | Alta | Baja | ✅ COMPLETADA |
 
 ---

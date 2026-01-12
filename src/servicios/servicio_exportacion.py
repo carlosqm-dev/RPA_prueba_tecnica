@@ -39,7 +39,6 @@ class ServicioExportacion:
             df = self.repo_resultados.obtener_incompletos_con_direccion()
 
             if df.empty:
-                logger.info("No hay registros incompletos para exportar")
                 return ""
 
             # Crear directorio de reportes si no existe
@@ -56,15 +55,11 @@ class ServicioExportacion:
             # Exportar a Excel usando openpyxl
             df.to_excel(ruta_completa, index=False, engine='openpyxl', sheet_name='Incompletos')
 
-            logger.info(
-                f"Reporte exportado: {ruta_completa} "
-                f"({len(df)} registros)"
-            )
-
+            print(f"Reporte exportado: {ruta_completa}")
             return ruta_completa
 
         except Exception as e:
-            logger.error(f"Error al exportar a Excel: {e}")
+            logger.error(f"Error al exportar: {e}")
             raise
 
     def exportar_todos_los_resultados(self, nombre_archivo: str = None) -> str:
@@ -81,7 +76,6 @@ class ServicioExportacion:
             df = self.repo_resultados.obtener_todos()
 
             if df.empty:
-                logger.info("No hay resultados para exportar")
                 return ""
 
             if nombre_archivo is None:
@@ -95,13 +89,8 @@ class ServicioExportacion:
 
             df.to_excel(ruta_completa, index=False, sheet_name='Resultados')
 
-            logger.info(
-                f"Resultados exportados: {ruta_completa} "
-                f"({len(df)} registros)"
-            )
-
             return ruta_completa
 
         except Exception as e:
-            logger.error(f"Error al exportar resultados: {e}")
+            logger.error(f"Error al exportar: {e}")
             raise

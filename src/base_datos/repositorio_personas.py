@@ -68,11 +68,10 @@ class RepositorioPersonas:
                 )
                 personas.append(persona)
 
-            logger.info(f"Se obtuvieron {len(personas)} personas a consultar")
             return personas
 
         except Exception as e:
-            logger.error(f"Error al obtener personas a consultar: {e}")
+            logger.error(f"Error al obtener personas: {e}")
             raise
 
     def obtener_persona_por_id(self, id_persona: int) -> Optional[Persona]:
@@ -117,7 +116,7 @@ class RepositorioPersonas:
             return None
 
         except Exception as e:
-            logger.error(f"Error al obtener persona {id_persona}: {e}")
+            logger.error(f"Error al obtener persona: {e}")
             raise
 
     def contar_personas_a_consultar(self) -> int:
